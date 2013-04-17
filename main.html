@@ -1,0 +1,487 @@
+<!DOCTYPE html>
+<html>
+<head>
+	<meta charset="utf-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.3, user-scalable=no" />
+        <meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1">
+        
+        <!-- CSS, 1.resets(don't edit) 2.general styles( can edit ) -->
+        <link rel="stylesheet" href="css/screen.css" type="text/css" media="screen" />
+        <link rel="stylesheet" href="css/global.css" type="text/css" media="screen" />
+        
+        <link href="css/mobiscroll-2.2.custom.min.css" rel="stylesheet" type="text/css" />
+        <style>
+            /* Font */
+            @font-face
+            {
+            font-family: Lato;
+            src: url('css/Lato-Light.ttf')/*,
+                 url('Sansation_Light.eot')*/; /* IE9+ */
+            }
+            body {
+                background: #eee!important;
+            }
+        </style>
+	<title>Propworks Meter</title>
+
+<script src="js/underscore.js"></script>
+<script src="js/jquery.js"></script>
+<script type="text/javascript" charset="utf-8" src="cordova-2.2.0.js"></script>
+<script type="text/javascript" charset="utf-8">
+	
+	window.ether = 0;
+	
+    //function onLoad() {
+       document.addEventListener("deviceready", onDeviceReady, false);
+    //}
+
+    function onDeviceReady() {
+		checkConnection();
+		
+		document.addEventListener("online", onOnline, false);
+        document.addEventListener("offline", onOffline, false);
+		document.addEventListener("resume", onResume, false);
+    }
+	
+	function onResume() {
+		checkConnection();
+    }
+
+	function checkConnection() {
+
+        var networkState = navigator.network.connection.type;
+
+        var states = {};
+
+        states[Connection.UNKNOWN]  = 'Unknown connection';
+        states[Connection.ETHERNET] = 'Ethernet connection';
+        states[Connection.WIFI]     = 'WiFi connection';
+        states[Connection.CELL_2G]  = 'Cell 2G connection';
+        states[Connection.CELL_3G]  = 'Cell 3G connection';
+        states[Connection.CELL_4G]  = 'Cell 4G connection';
+        states[Connection.NONE]     = 'No network connection';
+
+		if( states[networkState] == 'Unknown connection' || states[networkState] == 'No network connection' ){
+			window.ether = 0;
+		}else{
+			$.ajax(
+			{
+				type: 'POST',
+				url: "http://cosmicpolygon.com/acao.html",
+				cache: false,
+				complete: function (jqxhr) {
+					if( jqxhr.status == 200 && jqxhr.responseText == '<html><head><meta http-equiv="Access-Control-Allow-Origin" content="*"></head><body>YES</body></html>' ){
+						window.ether = 1;
+						$('#internetError').addClass("hid");
+						$('body').css("border-color", "green");
+						$('.eBar').css("background", "green");
+                        $('.eBar').text("Online");
+						//appi.app.render();
+						//appi.app.campus.render();
+					}
+					else{
+						window.ether = 0;
+						$('#internetError').removeClass("hid");
+						$('body').css("border-color", "red");
+						$('.eBar').css("background", "red");
+                        $('.eBar').text("Offline");
+					}
+					//alert("Status: " + jqxhr.status + ether + location.host);
+
+				}
+			});
+		}
+		
+		//alert('Connection type: ' + states[networkState] +' '+ ether);
+    }
+	
+	function onOnline() {
+		window.ether = 1;
+    }
+
+    function onOffline() {
+		window.ether = 0;
+    }
+
+</script>
+	
+</head>
+<body>
+
+<script src="js/backbone.js"></script>
+<script src="js/backbone.touch.min.js"></script>
+<script src="js/mobiscroll-2.2.custom.min.js" type="text/javascript"></script>
+<script type="text/javascript" charset="utf-8">
+	
+    setInterval(function(){
+        $.ajaxSetup({timeout:3000});
+        $.ajax(
+        {
+                type: 'POST',
+                //url: "http://cosmicpolygon.com/acao.html"+ "?_=" + jQuery.now(),
+				url: "http://cosmicpolygon.com/acao.html",
+				cache: false,
+                complete: function (jqxhr) {
+                        if( jqxhr.status == 200 && jqxhr.responseText == '<html><head><meta http-equiv="Access-Control-Allow-Origin" content="*"></head><body>YES</body></html>' ){
+                                window.ether = 1;
+                                $('body').css("border-color", "green");
+								$('.eBar').css("background", "green");
+                                $('.eBar').text("Online");
+								$('#internetError').addClass("hid");
+                                if( window.appi && window.appi.app.offstorage != "" ){
+                                    window.appi.app.syncUp();
+                                    window.appi.app.offstorage = "";
+                                }
+                        }
+                        else{
+                                window.ether = 0;
+                                $('body').css("border-color", "red");
+								$('.eBar').css("background", "red");
+                                $('.eBar').text("Offline");
+                                
+                        }
+                }
+        }); 
+    },5000);
+	
+</script>
+<script id="nav_view" type="text/html">
+    <a href="#<%= escape('page') %>"><div class="arrow-right"></div><span><%= escape('loc') %></span></a>
+</script>
+<script id="campus_view" type="text/html">
+    <% if( appi.app.model.attributes.utils == "utils" ) { %>
+        <a href="#meters/<%= escape('name') %>"> 
+    <% }else{ %>
+        <a href="#utils/<%= escape('name') %>"> 
+    <% } %>
+        <span class="code"><%= escape('name') %></span>
+        <span class="descr"><%= escape('desc') %></span>
+    </a>     
+</script>
+<script id="utils_view" type="text/html">
+    <a href="#meters/<%= escape('campus') %>/<%= escape('name') %>">                     
+        <span class="code"> <% if( appi.app.model.attributes.camps == "campus" ) { %>
+            <%= escape('campus') %> - <% }else{ }%><%= escape('name') %></span>
+        <span class="descr"><%= escape('desc') %></span>
+    </a>     
+</script>
+<script id="meters_view" type="text/html">
+    <a href="#meter/<%= escape('campus') %>/<%= escape('util') %>/<%= escape('name') %>">                   
+        <span class="code"><%= escape('name') %></span>
+        <span class="descr"><%= escape('desc') %></span>
+    </a>     
+</script>
+<script id="meter_view" type="text/html">
+
+    <form class="meterInput">
+	
+		<% 
+        var tt = escape('name');
+        var ttt = "";
+        if( appi.app.prevRead.collection.where({name: tt }).length > 0 ) {
+            ttt = appi.app.prevRead.collection.where({name: tt });
+         
+        %>
+		<div class="prevReads">
+            <span class="rTitle" >Last Inputed Reading for <%=appi.app.model.attributes.page.substr(6)%></span> 
+            <div class="Rhead">
+                <span class="d" >Date</span>
+                <span class="t" >Type</span>
+                <span class="v" >Value</span>
+            </div>
+            <div>
+                <ul>
+                    <%
+                    for( var i = 0; i < ttt.length; i++){
+                    %>
+                    <li>
+                        <div>
+                            <span class="d">
+                                <%
+                                var tempe = ttt[i].attributes.date;
+                                tempe = tempe.trim();
+                                tempe = tempe.substring(0, tempe.indexOf(' '));
+                                %>
+                                <%=tempe%>
+                            </span>
+                            <span class="t">
+                                <%
+                                if( ttt[i].attributes.type == 'R' ){
+                                %>Reg<%
+                                }
+                                if( ttt[i].attributes.type == 'I' ){
+                                %>Ini<%
+                                }
+                                if( ttt[i].attributes.type == 'F' ){
+                                %>Fin<%
+                                }
+                                if( ttt[i].attributes.type == 'E' ){
+                                %>Est<%
+                                }
+                                if( ttt[i].attributes.type == 'U' ){
+                                %>Usg<%
+                                }
+                                %>
+                            </span>
+                            <span class="v"><%=parseFloat(ttt[i].attributes.val) %></span>
+                            <span class="s hid"><%=parseFloat(ttt[i].attributes.seqN) %></span>
+                        </div>
+                    </li>
+                    <%
+                    }
+                    %>
+                </ul>
+            </div>
+        </div>
+        <% } %>
+        <% 
+        var tt = escape('name');
+        var ttt = "";
+        if( appi.app.prevRead.collection.where({name: tt }).length > 0 ) {
+            ttt = appi.app.prevRead.collection.where({name: tt });
+            var ttt = appi.app.prevRead.collection.where({name: tt });
+            var dt = new Date()
+            var dm = dt.getMonth();
+            var dy = dt.getFullYear();
+            for( var i=0; i<ttt.length; i++){
+                var tttt = ttt[i].get('date').substring(0,11);
+                var tfifth = tttt.split('-');
+                
+                if( dm > 1 && parseInt(tfifth[0])==dy && parseInt(tfifth[1])>dm ){
+                    %>
+                    <span id="sendM" class="split">ADD READING</span>
+                    <span id="updateM" >UPDATE READING</span>
+                    
+                    <div class="hid inputCont">
+                        <div class="date">
+                            <label for="date">Choose Read Date</label> 
+                            <input id="scroller" class="hid" name="scroller" value="<%= window.date %>" />
+                        </div>
+                        <div class="iCont"> 
+                            <label for="readingT">Reading Type</label> 
+                            <label class="selectfix">
+                                <select name="readT" id="readT">
+                                    <option value="R">Regular</option>
+                                    <option value="U">Usage</option>
+                                    <option value="F">Final</option>
+                                    <option value="E">Estimated</option>
+                                    <option value="I">Initial</option>
+                                </select> 
+                            </label>    
+                        </div>
+                        <div class="iCont"> 
+                            <label for="reading">Reading</label> 
+                            <input type="number" step="any" name="readingR" id="readingR" class="readingInput" value=""  />
+                            <input type="number" step="any" name="readingU" id="readingU" class="readingInput" value=""  /> 
+                            <input type="number" step="any" name="readingF" id="readingF" class="readingInput" value=""  /> 
+                            <input type="number" step="any" name="readingE" id="readingE" class="readingInput" value=""  /> 
+                            <input type="number" step="any" name="readingI" id="readingI" class="readingInput" value=""  /> 
+                        </div>
+                    </div>
+                    
+                    <%
+                }else if( dm == 1 && parseInt(tfifth[0])>=dy-1 && parseInt(tfifth[1])>=12 ){
+                    %>
+                    <span id="sendM" class="split">ADD READING</span>
+                    <span id="updateM" >UPDATE READING</span>
+                    
+                    <div class="hid inputCont">
+                        <div class="date">
+                            <label for="date">Choose Read Date</label> 
+                            <input id="scroller" class="hid" name="scroller" value="<%= window.date %>" />
+                        </div>
+                        <div class="iCont"> 
+                            <label for="readingT">Reading Type</label> 
+                            <label class="selectfix">
+                                <select name="readT" id="readT">
+                                    <option value="R">Regular</option>
+                                    <option value="U">Usage</option>
+                                    <option value="F">Final</option>
+                                    <option value="E">Estimated</option>
+                                    <option value="I">Initial</option>
+                                </select> 
+                            </label>    
+                        </div>
+                        <div class="iCont"> 
+                            <label for="reading">Reading</label> 
+                            <input type="number" step="any" name="readingR" id="readingR" class="readingInput" value=""  />
+                            <input type="number" step="any" name="readingU" id="readingU" class="readingInput" value=""  /> 
+                            <input type="number" step="any" name="readingF" id="readingF" class="readingInput" value=""  /> 
+                            <input type="number" step="any" name="readingE" id="readingE" class="readingInput" value=""  /> 
+                            <input type="number" step="any" name="readingI" id="readingI" class="readingInput" value=""  /> 
+                        </div>
+                    </div>
+                    
+                    <%
+                }else{
+                    %>
+                    <div class="date">
+                        <label for="date">Choose Read Date</label> 
+                        <input id="scroller" class="hid" name="scroller" value="<%= window.date %>" />
+                    </div>
+                    <div class="iCont"> 
+                        <label for="readingT">Reading Type</label> 
+                        <label class="selectfix">
+                            <select name="readT" id="readT">
+                                <option value="R">Regular</option>
+                                <option value="U">Usage</option>
+                                <option value="F">Final</option>
+                                <option value="E">Estimated</option>
+                                <option value="I">Initial</option>
+                            </select> 
+                        </label>    
+                    </div>
+                    <div class="iCont"> 
+                        <label for="reading">Reading</label> 
+                        <input type="number" step="any" name="readingR" id="readingR" class="readingInput" value=""  />
+                        <input type="number" step="any" name="readingU" id="readingU" class="readingInput" value=""  /> 
+                        <input type="number" step="any" name="readingF" id="readingF" class="readingInput" value=""  /> 
+                        <input type="number" step="any" name="readingE" id="readingE" class="readingInput" value=""  /> 
+                        <input type="number" step="any" name="readingI" id="readingI" class="readingInput" value=""  /> 
+                    </div>
+                    <input type="submit" id="subM" class="sendMe" value="SUBMIT" name="submit" />
+                    <%
+                }
+            } 
+            
+         
+        %>
+        
+        <% }else{ %>
+        <div class="date">
+            <label for="date">Choose Read Date</label> 
+            <input id="scroller" class="hid" name="scroller" value="<%= window.date %>" />
+        </div>
+        <div class="iCont"> 
+            <label for="readingT">Reading Type</label> 
+            <label class="selectfix">
+                <select name="readT" id="readT">
+                    <option value="R">Regular</option>
+                    <option value="U">Usage</option>
+                    <option value="F">Final</option>
+                    <option value="E">Estimated</option>
+                    <option value="I">Initial</option>
+                </select> 
+            </label>    
+        </div>
+        <div class="iCont"> 
+            <label for="reading">Reading</label> 
+            <input type="number" step="any" name="readingR" id="readingR" class="readingInput" value=""  />
+            <input type="number" step="any" name="readingU" id="readingU" class="readingInput" value=""  /> 
+            <input type="number" step="any" name="readingF" id="readingF" class="readingInput" value=""  /> 
+            <input type="number" step="any" name="readingE" id="readingE" class="readingInput" value=""  /> 
+            <input type="number" step="any" name="readingI" id="readingI" class="readingInput" value=""  /> 
+        </div>
+        <input type="submit" id="subM" class="sendMe" value="SUBMIT" name="submit" />
+        <% } %>
+        
+        <input type="submit" id="subM" class="hid" value="SUBMIT" name="submit" />
+    </form>
+    <script>
+        
+    //var slider3 = new Swipe(document.getElementById('slider3'));
+    </script>
+</script>
+<script id="logged_in" type="text/html">
+	<div class="eBar">Detecting Connection</div>
+	<div class='syncstat hid'></div>
+    <div id="settings_cont" class="hid">
+        <div id="settings">
+            <a class="logout" href="#">logout</a>
+            <span class="changeutil" >util 
+            <% if( appi.app.model.attributes.utils == "utils" ) { %>
+                off
+            <% }else{ %>
+                on
+            <% } %>
+            </span>
+            <span class="changecamps" >camps 
+            <% if( appi.app.model.attributes.camps == "campus" ) { %>
+                off
+            <% }else{ %>
+                on
+            <% } %>
+            </span>
+            <span class="goOffline" >offline</span>
+            <span class="sync" >sync</span>
+        </div>
+    </div>
+	<div id="result" ></div> 
+    <div id="main_cont" class="extend">
+        <div class="content" >
+            <h1><img src="imgs/meter.png" /><span>Select a Campus</span></h1>
+            <span class="sett" >settings</span>
+            
+            <div class="nav_cont">
+            
+            </div>
+            <div class="loader"><img src="imgs/loader.gif" /></div>
+			<span class="sortM hid" ><span>Sort By ABC</span></span>
+            <div class="campus_cont">
+            
+            </div>
+        </div>
+    </div>
+</script>
+<script id="not_logged_in" type="text/html">
+	<div class="eBar">Detecting Connection</div>
+	<div id="internetError" class="hid">No/Weak Internet Connection</div>
+    <div id="main_cont">    
+        <form id="login" class="login">
+            <!-- Logo -->
+            <img class="logo" src="imgs/airitlogo-TINY.png" />
+            <!-- Title -->
+            <h1>PROPworks - Meter Sign In</h1>
+			<div class="loaderLogin hid"><img src="imgs/loader.gif" /></div>
+			<div id="result" >
+				<div class="response hid" >Invalid username/password</div>
+			</div>
+			<div class="pwloc">
+                    <label for="pwloc">Propworks Location</label>
+                    <input type="pwloc" name="pwloc" id="pwloc" value="http://10.10.10.188:8181/" /> 
+            </div>
+            <div>
+				<label for="username">Username</label> 
+				<input type="text" name="username" id="username" value="" autocomplete="off"/> 
+            <!--Username: <input name="username" type="text" value="" />-->
+            </div>
+            <div class="passinput" >
+				<label for="pass">Password</label> 
+				<input type="password" name="pass" id="pass" value="" /> 
+            <!--Password: <input name="pass" type="text" value="" />-->
+            </div>
+            <!--<button id="send" value="Log In" type="submit">Submit</button>-->
+            <input type="submit" id="send" value="Log In" name="submit" />
+        </form>
+    </div>
+    <script>
+    $(document).ready(function(){
+
+        //Input replace and initialize styles
+        $("form label").css("display","block");
+        $("form label").css("opacity", "1");
+        $("form input").focus(function () {
+                        $(this).siblings("label").stop().animate({"opacity": "0"}, 400);
+                        $(this).siblings("label").css("display","none");
+        });
+        $("form input").blur(function() {
+                        if( $(this).val() == "" ){
+                            $(this).siblings("label").stop().animate({"opacity": "1"}, 400);
+                            $(this).siblings("label").css("display","block");
+                        }
+        });
+        $("form div input").val("");
+		
+		if( window.pwloc != "file://" ){
+            $(".pwloc label").css("opacity","0");
+            $("#pwloc").val(window.pwloc);
+        }
+
+    });
+    </script>
+</script>
+
+<script src="js/main.js"></script>
+
+</body>
+</html>
